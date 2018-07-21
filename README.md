@@ -2,6 +2,10 @@
 
 OpenPSD oauth2 enabled authorization server based on [dex](https://github.com/coreos/dex).
 
+## requirements
+
+docker
+
 ## build
 Use `make build` to build the docker container.
 
