@@ -8,20 +8,17 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"github.com/openpsd/auth-server/entities"
-	"github.com/openpsd/auth-server/providers/config"
 	"github.com/openpsd/auth-server/usecases"
 )
 
 // Server holds all http handlers for the PSD2 API
 type Server struct {
-	config    *config.Config
 	userstate *usecases.Userstate
 }
 
 // NewServer injects the required dependencies into the PSD2 API server
-func NewServer(conf *config.Config, u *usecases.Userstate) (http.Handler, Server) {
+func NewServer(u *usecases.Userstate) (http.Handler, Server) {
 	s := Server{
-		config:    conf,
 		userstate: u,
 	}
 
@@ -35,14 +32,15 @@ func (s Server) index(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 }
 
 func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	challenge := r.URL.Query().Get("challenge")
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	var l entities.LoginRequest
 	if err := l.Unmarshal(b); err == nil {
-		if err = s.userstate.Login(l.Username, l.Password); err == nil {
-			w.WriteHeader(http.StatusOK)
+		if redirectLink, err := s.userstate.Login(l.Username, l.Password, challenge); err == nil {
+			http.Redirect(w, r, redirectLink, http.StatusMovedPermanently)
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 	}

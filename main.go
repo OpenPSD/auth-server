@@ -4,18 +4,21 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/openpsd/auth-server/entities"
 	"github.com/openpsd/auth-server/providers/api"
-	"github.com/openpsd/auth-server/providers/config"
+	"github.com/openpsd/auth-server/providers/oauth"
 	"github.com/openpsd/auth-server/providers/userstore"
 	"github.com/openpsd/auth-server/usecases"
 )
 
 func main() {
-	conf := config.LoadConfig()
+	config := entities.NewConfig()
 	log.Println("OpenPSD auth server")
 	userstore := userstore.NewMemUserStore()
-	userstate := usecases.NewUserstate(userstore)
+	oauthclient := oauth.NewHydraClient(config.HydraURL)
+	userstate := usecases.NewUserstate(userstore, oauthclient)
 	userstate.CreateUser("admin", "admin@openpsd.com", "admin")
-	authServer, _ := api.NewServer(conf, userstate)
-	http.ListenAndServe(":8000", authServer)
+
+	authServer, _ := api.NewServer(userstate)
+	http.ListenAndServe(config.Port, authServer)
 }

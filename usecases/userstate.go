@@ -4,30 +4,35 @@ import (
 	"fmt"
 
 	"github.com/openpsd/auth-server/entities"
+	"github.com/openpsd/auth-server/providers/oauth"
 	"github.com/openpsd/auth-server/providers/userstore"
 )
 
 type Userstate struct {
-	Userstore userstore.Userstore
+	Userstore   userstore.Userstore
+	Oauthclient oauth.Oauthclient
 }
 
-func NewUserstate(userstore userstore.Userstore) *Userstate {
+func NewUserstate(userstore userstore.Userstore, oauthclient oauth.Oauthclient) *Userstate {
 	return &Userstate{
-		Userstore: userstore,
+		Userstore:   userstore,
+		Oauthclient: oauthclient,
 	}
 }
 
 // Login the user by validating the password
-func (u *Userstate) Login(username string, password string) error {
+func (u *Userstate) Login(username string, password string, challenge string) (string, error) {
 	user, err := u.Userstore.GetUser(username)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if correctBcrypt([]byte(user.Hash), password) {
 		user.IsLoggedIn = true
-		return nil
+		acceptLoginRequest := entities.NewAcceptLoginRequest(username, true)
+		redirectLink, err := u.Oauthclient.AcceptLoginRequest(challenge, acceptLoginRequest)
+		return redirectLink, err
 	}
-	return fmt.Errorf("invalid password %s", username)
+	return "", fmt.Errorf("invalid password %s", username)
 }
 
 // Logout the user
