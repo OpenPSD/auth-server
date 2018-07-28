@@ -1,20 +1,22 @@
 # OpenPSD auth server
 
-OpenPSD oauth2 enabled authorization server based on [dex](https://github.com/coreos/dex).
+OpenPSD authorization including oauth2 capabilities provided by [hydra](https://www.ory.sh/).
+
+Work in progress!
 
 ## requirements
 
 docker
+docker-compose
+yarn
+go
 
 ## build
-Use `make build` to build the docker container.
-
-## configure
-
-Take a look at the `config/config.yaml` file for configuration.
+Use `make build-docker-auth-server` to build the docker container.
 
 ## run
-Use `make run` to run the docker container. By default this will create a `dex.db` sqlite database in the `./data` directory. 
+Use `make run-docker` to run the docker container. The server will be available at `http://localhost:8000`.
 
-The server will be available at `http://localhost:5556/dex`.
+## TODO
+- Setup docker-compose to combine with hydra
 
