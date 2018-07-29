@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -28,7 +27,7 @@ func NewServer(u *usecases.Userstate) (http.Handler, Server) {
 }
 
 func (s Server) index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, "OpenPSD auth server is running!\n")
+	http.ServeFile(w, r, "web/index.html")
 }
 
 func (s Server) getLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -61,8 +60,8 @@ func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.P
 
 func (s Server) createRoutes() http.Handler {
 	routes := httprouter.New()
-	routes.POST("/login", s.postLogin)
-	routes.POST("/login", s.postLogin)
-	routes.ServeFiles("/*filepath", http.Dir("web"))
+	routes.GET("/api/validate", s.getLogin)
+	routes.POST("/api/login", s.postLogin)
+	routes.ServeFiles("/app/*filepath", http.Dir("web"))
 	return routes
 }

@@ -1,6 +1,6 @@
 {
-  "id": "example-auth-code",
-  "description": "This client can be used to perform (exemplarily) the OAuth 2.0 Authorize Code Flow.",
+  "id": "auth-client",
+  "description": "Login client that performs the OAuth 2.0 Authorize Code Flow.",
   "client_secret": "secret",
   "scope": "openid offline",
   "grant_types": [

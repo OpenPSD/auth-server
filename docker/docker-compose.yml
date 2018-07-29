@@ -38,7 +38,7 @@ services:
     depends_on:
       - hydra-migrate
     volumes:
-      - ../scripts:/scripts
+      - ./scripts:/scripts
     ports:
       - "4444:4444"
       - "4455:4455"
@@ -52,8 +52,8 @@ services:
       # Essential configuration for Hydra
       - HYDRA_SYSTEM_SECRET=youReallyNeedToChangeThis
       - HYDRA_DATABASE_URL=postgres://dbuser:secret@postgresd:5432/accesscontroldb?sslmode=disable
-      - HYDRA_OAUTH2_CONSENT_URL=http://localhost:3000/consent
-      - HYDRA_OAUTH2_LOGIN_URL=http://localhost:3000/login
+      - HYDRA_OAUTH2_CONSENT_URL=http://localhost:8000/app/#/consent#
+      - HYDRA_OAUTH2_LOGIN_URL=http://localhost:8000/app#/login#
       - HYDRA_OAUTH2_ISSUER_URL=http://localhost:4444
 
       # All of these URLs MUST NOT end with a trailing slash. This is very important!
@@ -66,10 +66,11 @@ services:
       - "HYDRA_ACTION_PREFIX=actions:hydra:"
 
   identity-provider:
+    build:
+      context: auth-server
+      dockerfile: Dockerfile
     environment:
-      - HYDRA_URL=http://services:4444
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
-    image: openpsd/auth-server:latest
+      - AUTH_HYDRA_URL=http://services:4444
     links:
       - services
     ports:

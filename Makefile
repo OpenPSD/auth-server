@@ -17,10 +17,16 @@ build-linux:
 build-docker-auth-server: build-auth-portal-prod
 	GOOS=linux GOARCH=amd64 go build -o docker/auth-server/auth-server ./server/
 	cd docker/auth-server && docker build -t openpsd/auth-server:latest .
-	rm -f docker/auth-server/auth-server
 
 build-auth-portal-prod:
 	cd auth-portal && yarn install && yarn run build && rm -rf ../docker/auth-server/web && mv dist ../docker/auth-server/web
 
-run-docker:
-	docker run -p $(PORT):8000 openpsd/auth-server
+run:
+	cd docker && HYDRA_VERSION=v1.0.0-beta.4 docker-compose up --build -d
+
+stop:
+	cd docker && HYDRA_VERSION=v1.0.0-beta.4 docker-compose kill
+	cd docker && HYDRA_VERSION=v1.0.0-beta.4 docker-compose rm -f
+
+clean:
+	rm -f docker/auth-server/auth-server
