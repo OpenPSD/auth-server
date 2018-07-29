@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/openpsd/auth-server/server/entities"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 
 	"github.com/ory/hydra/sdk/go/hydra"
@@ -11,6 +12,7 @@ import (
 
 type Oauthclient interface {
 	AcceptLoginRequest(challenge string, username string, remember bool) (string, error)
+	GetLoginRequest(challenge string) (entities.ValidateLoginRequest, error)
 }
 
 type HydraClient struct {
@@ -46,4 +48,17 @@ func (h *HydraClient) AcceptLoginRequest(challenge string, username string, reme
 		return "", fmt.Errorf("hydra returned status code %d", res.StatusCode)
 	}
 	return req.RedirectTo, nil
+}
+
+func (h *HydraClient) GetLoginRequest(challenge string) (entities.ValidateLoginRequest, error) {
+	validateLoginRequest := entities.ValidateLoginRequest{}
+	req, res, err := h.HydraSDK.GetLoginRequest(challenge)
+	if err != nil {
+		return validateLoginRequest, err
+	} else if res.StatusCode != http.StatusOK {
+		return validateLoginRequest, fmt.Errorf("hydra returned status code %d", res.StatusCode)
+	}
+	validateLoginRequest.Skip = req.Skip
+	validateLoginRequest.Subject = req.Subject
+	return validateLoginRequest, nil
 }

@@ -31,6 +31,18 @@ func (s Server) index(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	fmt.Fprint(w, "OpenPSD auth server is running!\n")
 }
 
+func (s Server) getLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	challenge := r.URL.Query().Get("challenge")
+	if redirectLink, err := s.userstate.ValidateLoginChallenge(challenge); err == nil {
+		if redirectLink == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			http.Redirect(w, r, redirectLink, http.StatusMovedPermanently)
+		}
+	}
+	w.WriteHeader(http.StatusInternalServerError)
+}
+
 func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	challenge := r.URL.Query().Get("challenge")
 	b, err := ioutil.ReadAll(r.Body)
@@ -42,13 +54,14 @@ func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.P
 		if redirectLink, err := s.userstate.Login(l.Username, l.Password, challenge); err == nil {
 			http.Redirect(w, r, redirectLink, http.StatusMovedPermanently)
 		}
-		w.WriteHeader(http.StatusUnauthorized)
+
 	}
 	w.WriteHeader(http.StatusUnprocessableEntity)
 }
 
 func (s Server) createRoutes() http.Handler {
 	routes := httprouter.New()
+	routes.POST("/login", s.postLogin)
 	routes.POST("/login", s.postLogin)
 	routes.ServeFiles("/*filepath", http.Dir("web"))
 	return routes

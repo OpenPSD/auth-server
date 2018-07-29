@@ -77,7 +77,14 @@ export default {
     if (this.$route.query.debug) {
       this.debug = this.$route.query.debug
     }
-    // Hydra.getLoginRequest(this.challenge)
+    axios.get(process.env.API_BASE_URL + '/login', this.credentials).then(response => {
+        console.log(response)
+        if (response.status === 301) {
+          console.log('redirect')
+        }
+      }).catch(e => {
+        console.log('failed to login')
+      })
   },
   methods: {
     login: function (event) {
@@ -87,7 +94,7 @@ export default {
       }
       axios.post(process.env.API_BASE_URL + '/login', this.credentials).then(response => {
         console.log(response)
-        if (response.status === 200) {
+        if (response.status === 301) {
           console.log('successfully logged in user ' + this.username)
         }
       }).catch(e => {

@@ -34,6 +34,19 @@ func (u *Userstate) Login(username string, password string, challenge string) (s
 	return "", fmt.Errorf("invalid password %s", username)
 }
 
+// ValidateLoginChallenge checks if the user was already authenticated using the challenge. Will return an empty string if not.
+func (u *Userstate) ValidateLoginChallenge(challenge string) (string, error) {
+	validationResponse, err := u.Oauthclient.GetLoginRequest(challenge)
+	if err != nil {
+		return "", err
+	}
+	if validationResponse.Skip {
+		redirectLink, err := u.Oauthclient.AcceptLoginRequest(challenge, validationResponse.Subject, true)
+		return redirectLink, err
+	}
+	return "", nil
+}
+
 // Logout the user
 func (u *Userstate) Logout(username string) error {
 	user, err := u.Userstore.GetUser(username)
