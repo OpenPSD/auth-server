@@ -28,8 +28,7 @@ func (u *Userstate) Login(username string, password string, challenge string) (s
 	}
 	if correctBcrypt([]byte(user.Hash), password) {
 		user.IsLoggedIn = true
-		acceptLoginRequest := entities.NewAcceptLoginRequest(username, true)
-		redirectLink, err := u.Oauthclient.AcceptLoginRequest(challenge, acceptLoginRequest)
+		redirectLink, err := u.Oauthclient.AcceptLoginRequest(challenge, username, true)
 		return redirectLink, err
 	}
 	return "", fmt.Errorf("invalid password %s", username)

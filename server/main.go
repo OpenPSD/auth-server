@@ -15,7 +15,10 @@ func main() {
 	config := entities.NewConfig()
 	log.Println("OpenPSD auth server")
 	userstore := userstore.NewMemUserStore()
-	oauthclient := oauth.NewHydraClient(config.HydraURL)
+	oauthclient, err := oauth.NewHydraClient(config.HydraURL)
+	if err != nil {
+		log.Panic("unable to create oauth client")
+	}
 	userstate := usecases.NewUserstate(userstore, oauthclient)
 	userstate.CreateUser("admin", "admin@openpsd.com", "admin")
 

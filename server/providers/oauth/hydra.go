@@ -1,39 +1,49 @@
 package oauth
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 
-	"github.com/openpsd/auth-server/server/entities"
+	"github.com/ory/hydra/sdk/go/hydra/swagger"
+
+	"github.com/ory/hydra/sdk/go/hydra"
 )
 
 type Oauthclient interface {
-	AcceptLoginRequest(challenge string, r entities.AcceptLoginRequest) (string, error)
+	AcceptLoginRequest(challenge string, username string, remember bool) (string, error)
 }
 
 type HydraClient struct {
 	HydraURL string
+	HydraSDK *hydra.CodeGenSDK
 }
 
-func NewHydraClient(url string) *HydraClient {
+func NewHydraClient(url string) (*HydraClient, error) {
+	sdk, err := hydra.NewSDK(&hydra.Configuration{
+		EndpointURL: url,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &HydraClient{
 		HydraURL: url,
-	}
+		HydraSDK: sdk,
+	}, nil
 }
 
 // AcceptLoginRequest sends the login request to the oauth server and expects the redirect link in return
-func (h *HydraClient) AcceptLoginRequest(challenge string, r entities.AcceptLoginRequest) (string, error) {
-	data, err := r.Marshal()
+func (h *HydraClient) AcceptLoginRequest(challenge string, username string, remember bool) (string, error) {
+	acceptLoginRequest := swagger.AcceptLoginRequest{
+		Subject:     username,
+		Remember:    remember,
+		RememberFor: 3600,
+	}
+	req, res, err := h.HydraSDK.AcceptLoginRequest(challenge, acceptLoginRequest)
+
 	if err != nil {
 		return "", err
+	} else if res.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("hydra returned status code %d", res.StatusCode)
 	}
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPut, h.buildURL("login", "accept", challenge), bytes.NewBuffer(data))
-	res, err := client.Do(req)
-	return res.Header.Get("redirect_to"), err
-}
-
-func (h *HydraClient) buildURL(flow string, action string, challenge string) string {
-	return fmt.Sprintf("%s/oauth2/auth/requests/%s/%s/%s", h.HydraURL, flow, challenge, action)
+	return req.RedirectTo, nil
 }
