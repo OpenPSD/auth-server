@@ -42,7 +42,10 @@ func (u *Userstate) ValidateLoginChallenge(challenge string) (string, error) {
 	}
 	if validationResponse.Skip {
 		redirectLink, err := u.Oauthclient.AcceptLoginRequest(challenge, validationResponse.Subject, true)
-		return redirectLink, err
+		if err != nil {
+			return "", err
+		}
+		return redirectLink, nil
 	}
 	return "", nil
 }

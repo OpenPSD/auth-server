@@ -46,6 +46,7 @@ import axios from 'axios'
 import Hydra from '../services/hydra.js'
 
 export default {
+  props: ['login_challenge'],
   data () {
     return {
       clipped: false,
@@ -73,11 +74,12 @@ export default {
   },
   mounted: function () {
     Hydra.sendRequest()
-    this.challenge = this.$route.params.login_challenge
+    this.challenge = this.$route.query.login_challenge
     if (this.$route.query.debug) {
       this.debug = this.$route.query.debug
     }
-    axios.get(process.env.API_BASE_URL + '/api/validate', this.credentials).then(response => {
+    console.log(this.challenge)
+    axios.get(process.env.API_BASE_URL + '/api/login?login_challenge=' + this.challenge).then(response => {
       console.log(response)
       if (response.status === 301) {
         console.log('redirect')
@@ -90,7 +92,8 @@ export default {
     login: function (event) {
       this.credentials = {
         Username: this.username,
-        Password: this.password
+        Password: this.password,
+        Challenge: this.challenge
       }
       axios.post(process.env.API_BASE_URL + '/api/login', this.credentials).then(response => {
         console.log(response)

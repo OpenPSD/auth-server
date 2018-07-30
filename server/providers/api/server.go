@@ -34,25 +34,26 @@ func (s Server) index(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 func (s Server) getLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	challenge := r.URL.Query().Get("login_challenge")
-	if redirectLink, err := s.userstate.ValidateLoginChallenge(challenge); err == nil {
-		if redirectLink == "" {
-			w.WriteHeader(http.StatusUnauthorized)
-		} else {
-			http.Redirect(w, r, redirectLink, http.StatusMovedPermanently)
-		}
+	redirectLink, err := s.userstate.ValidateLoginChallenge(challenge)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
 	}
-	w.WriteHeader(http.StatusInternalServerError)
+	if redirectLink == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+	} else {
+		http.Redirect(w, r, redirectLink, http.StatusMovedPermanently)
+	}
 }
 
 func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	challenge := r.URL.Query().Get("login_challenge")
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	var l entities.LoginRequest
 	if err := l.Unmarshal(b); err == nil {
-		if redirectLink, err := s.userstate.Login(l.Username, l.Password, challenge); err == nil {
+		if redirectLink, err := s.userstate.Login(l.Username, l.Password, l.Challenge); err == nil {
 			http.Redirect(w, r, redirectLink, http.StatusMovedPermanently)
 		}
 
@@ -61,12 +62,12 @@ func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.P
 }
 
 func (s Server) rewriteLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	r.URL.Path = "/app/--/login--"
+	r.URL.Path = "/app/--/login"
 	http.Redirect(w, r, strings.Replace(r.URL.String(), "--", "#", -1), http.StatusMovedPermanently)
 }
 
 func (s Server) rewriteConsent(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	r.URL.Path = "/app/--/consent--"
+	r.URL.Path = "/app/--/consent"
 	http.Redirect(w, r, strings.Replace(r.URL.String(), "--", "#", -1), http.StatusMovedPermanently)
 }
 
@@ -74,7 +75,7 @@ func (s Server) createRoutes() http.Handler {
 	routes := httprouter.New()
 	routes.GET("/login", s.rewriteLogin)
 	routes.GET("/consent", s.rewriteConsent)
-	routes.GET("/api/validate", s.getLogin)
+	routes.GET("/api/login", s.getLogin)
 	routes.POST("/api/login", s.postLogin)
 	routes.ServeFiles("/app/*filepath", http.Dir("web"))
 	return routes

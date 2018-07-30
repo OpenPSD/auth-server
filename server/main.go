@@ -16,6 +16,7 @@ func main() {
 	log.Println("OpenPSD auth server")
 	userstore := userstore.NewMemUserStore()
 	oauthclient, err := oauth.NewHydraClient(config.HydraURL)
+	log.Printf("using Hydra endpoint %s", oauthclient.HydraSDK.Configuration.EndpointURL)
 	if err != nil {
 		log.Panic("unable to create oauth client")
 	}

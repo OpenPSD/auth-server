@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/openpsd/auth-server/server/entities"
@@ -44,21 +45,23 @@ func (h *HydraClient) AcceptLoginRequest(challenge string, username string, reme
 
 	if err != nil {
 		return "", err
-	} else if res.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("hydra returned status code %d", res.StatusCode)
+	} else if res.StatusCode == http.StatusOK {
+		return req.RedirectTo, nil
 	}
-	return req.RedirectTo, nil
+	return "", fmt.Errorf("hydra returned status code %d", res.StatusCode)
 }
 
 func (h *HydraClient) GetLoginRequest(challenge string) (entities.ValidateLoginRequest, error) {
 	validateLoginRequest := entities.ValidateLoginRequest{}
 	req, res, err := h.HydraSDK.GetLoginRequest(challenge)
 	if err != nil {
+		log.Printf("failed to get login reqest from hydra. reason: %s", err)
 		return validateLoginRequest, err
-	} else if res.StatusCode != http.StatusOK {
-		return validateLoginRequest, fmt.Errorf("hydra returned status code %d", res.StatusCode)
 	}
-	validateLoginRequest.Skip = req.Skip
-	validateLoginRequest.Subject = req.Subject
-	return validateLoginRequest, nil
+	if res.StatusCode == http.StatusOK {
+		validateLoginRequest.Skip = req.Skip
+		validateLoginRequest.Subject = req.Subject
+		return validateLoginRequest, nil
+	}
+	return validateLoginRequest, fmt.Errorf("status code %d", res.StatusCode)
 }

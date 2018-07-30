@@ -14,15 +14,17 @@ endif
 build-linux:
 	GOOS=linux GOARCH=amd64 go build
 
-build-docker-auth-server: build-auth-portal-prod
+build-all: build-auth-server build-auth-portal-prod
+	echo "build all"
+
+build-auth-server:
 	GOOS=linux GOARCH=amd64 go build -o docker/auth-server/auth-server ./server/
-	cd docker/auth-server && docker build -t openpsd/auth-server:latest .
 
 build-auth-portal-prod:
 	cd auth-portal && yarn install && yarn run build && rm -rf ../docker/auth-server/web && mv dist ../docker/auth-server/web
 
-run:
-	cd docker && HYDRA_VERSION=v1.0.0-beta.4 docker-compose up --build -d
+run: stop
+	cd docker && HYDRA_VERSION=v1.0.0-beta.4 docker-compose up --build -d && docker-compose logs -f
 
 stop:
 	cd docker && HYDRA_VERSION=v1.0.0-beta.4 docker-compose kill
@@ -30,3 +32,4 @@ stop:
 
 clean:
 	rm -f docker/auth-server/auth-server
+	rm -f docker/auth-server/web
