@@ -52,8 +52,8 @@ services:
       # Essential configuration for Hydra
       - HYDRA_SYSTEM_SECRET=youReallyNeedToChangeThis
       - HYDRA_DATABASE_URL=postgres://dbuser:secret@postgresd:5432/accesscontroldb?sslmode=disable
-      - HYDRA_OAUTH2_CONSENT_URL=http://localhost:8000/app/#/consent#
-      - HYDRA_OAUTH2_LOGIN_URL=http://localhost:8000/app#/login#
+      - HYDRA_OAUTH2_CONSENT_URL=http://localhost:8000/consent
+      - HYDRA_OAUTH2_LOGIN_URL=http://localhost:8000/login
       - HYDRA_OAUTH2_ISSUER_URL=http://localhost:4444
 
       # All of these URLs MUST NOT end with a trailing slash. This is very important!

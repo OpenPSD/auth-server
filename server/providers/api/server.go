@@ -3,6 +3,7 @@ package api
 import (
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
@@ -22,6 +23,7 @@ func NewServer(u *usecases.Userstate) (http.Handler, Server) {
 	}
 
 	routes := s.createRoutes()
+
 	chain := alice.New(s.timeoutHandler).Then(routes)
 	return chain, s
 }
@@ -31,7 +33,7 @@ func (s Server) index(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 }
 
 func (s Server) getLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	challenge := r.URL.Query().Get("challenge")
+	challenge := r.URL.Query().Get("login_challenge")
 	if redirectLink, err := s.userstate.ValidateLoginChallenge(challenge); err == nil {
 		if redirectLink == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -43,7 +45,7 @@ func (s Server) getLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 }
 
 func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	challenge := r.URL.Query().Get("challenge")
+	challenge := r.URL.Query().Get("login_challenge")
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -58,8 +60,20 @@ func (s Server) postLogin(w http.ResponseWriter, r *http.Request, _ httprouter.P
 	w.WriteHeader(http.StatusUnprocessableEntity)
 }
 
+func (s Server) rewriteLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	r.URL.Path = "/app/--/login--"
+	http.Redirect(w, r, strings.Replace(r.URL.String(), "--", "#", -1), http.StatusMovedPermanently)
+}
+
+func (s Server) rewriteConsent(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	r.URL.Path = "/app/--/consent--"
+	http.Redirect(w, r, strings.Replace(r.URL.String(), "--", "#", -1), http.StatusMovedPermanently)
+}
+
 func (s Server) createRoutes() http.Handler {
 	routes := httprouter.New()
+	routes.GET("/login", s.rewriteLogin)
+	routes.GET("/consent", s.rewriteConsent)
 	routes.GET("/api/validate", s.getLogin)
 	routes.POST("/api/login", s.postLogin)
 	routes.ServeFiles("/app/*filepath", http.Dir("web"))
