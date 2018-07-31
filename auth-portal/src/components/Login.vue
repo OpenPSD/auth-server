@@ -81,7 +81,7 @@ export default {
     console.log(this.challenge)
     axios.get(process.env.API_BASE_URL + '/api/login?login_challenge=' + this.challenge).then(response => {
       console.log(response)
-      if (response.status === 301) {
+      if (response.status === 302) {
         console.log('redirect')
       }
     }).catch(e => {
@@ -97,8 +97,9 @@ export default {
       }
       axios.post(process.env.API_BASE_URL + '/api/login', this.credentials).then(response => {
         console.log(response)
-        if (response.status === 301) {
+        if (response.status === 200) {
           console.log('successfully logged in user ' + this.username)
+          window.location.href = response.data
         }
       }).catch(e => {
         console.log('failed to login')

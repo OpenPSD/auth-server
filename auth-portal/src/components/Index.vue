@@ -32,9 +32,6 @@ a {
 </style>
 
 <script>
-import axios from 'axios'
-import Hydra from '../services/hydra.js'
-
 export default {
   data () {
     return {
@@ -48,49 +45,14 @@ export default {
       miniVariant: false,
       right: true,
       rightDrawer: false,
-      title: 'ASPSP',
-      challenge: '',
-      username: 'user',
-      password: 'password'
+      title: 'ASPSP'
     }
   },
   created () {
-    this.challenge = this.$route.params.challenge
-    if (this.$route.query.debug) {
-      this.debug = this.$route.query.debug
-    }
-    // Setup auth code check befor loading the page
   },
   mounted: function () {
-    Hydra.sendRequest()
-    this.challenge = this.$route.params.challenge
-    if (this.$route.query.debug) {
-      this.debug = this.$route.query.debug
-    }
-    axios.get(process.env.API_BASE_URL + '/api/login', this.credentials).then(response => {
-      console.log(response)
-      if (response.status === 302) {
-        console.log('redirect')
-      }
-    }).catch(e => {
-      console.log('failed to login')
-    })
   },
   methods: {
-    login: function (event) {
-      this.credentials = {
-        Username: this.username,
-        Password: this.password
-      }
-      axios.post(process.env.API_BASE_URL + '/api/login', this.credentials).then(response => {
-        console.log(response)
-        if (response.status === 301) {
-          console.log('successfully logged in user ' + this.username)
-        }
-      }).catch(e => {
-        console.log('failed to login')
-      })
-    }
   }
 }
 </script>
