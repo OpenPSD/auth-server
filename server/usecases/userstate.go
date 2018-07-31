@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/openpsd/auth-server/server/entities"
+	"github.com/openpsd/auth-server/server/providers/log"
 	"github.com/openpsd/auth-server/server/providers/oauth"
 	"github.com/openpsd/auth-server/server/providers/userstore"
 )
@@ -22,13 +23,21 @@ func NewUserstate(userstore userstore.Userstore, oauthclient oauth.Oauthclient) 
 
 // Login the user by validating the password
 func (u *Userstate) Login(username string, password string, challenge string) (string, error) {
+	log.Trace.Println("msg='performing login'")
 	user, err := u.Userstore.GetUser(username)
 	if err != nil {
+		log.Error.Printf("msg='%s'", err)
 		return "", err
 	}
 	if correctBcrypt([]byte(user.Hash), password) {
+		log.Info.Printf("user=%s msg='login successful'", username)
 		user.IsLoggedIn = true
 		redirectLink, err := u.Oauthclient.AcceptLoginRequest(challenge, username, true)
+		if err != nil {
+			log.Error.Printf("msg='%s'", err)
+		} else {
+			log.Info.Printf("user=%s msg='login successful'", username)
+		}
 		return redirectLink, err
 	}
 	return "", fmt.Errorf("invalid password %s", username)

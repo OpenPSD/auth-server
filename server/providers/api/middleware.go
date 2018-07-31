@@ -17,7 +17,7 @@ func (s Server) loggingHandler(next http.Handler) http.Handler {
 
 		// Do middleware things
 		start := time.Now()
-		defer func() { log.Printf("path=%s time=%s", r.URL.Path, time.Since(start)) }()
+		defer func() { log.Printf("method=%s path=%s time=%s", r.Method, r.URL.Path, time.Since(start)) }()
 		next.ServeHTTP(w, r)
 	})
 }

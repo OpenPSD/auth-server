@@ -2,10 +2,10 @@ package oauth
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/openpsd/auth-server/server/entities"
+	"github.com/openpsd/auth-server/server/providers/log"
 	"github.com/ory/hydra/sdk/go/hydra/swagger"
 
 	"github.com/ory/hydra/sdk/go/hydra"
@@ -36,6 +36,7 @@ func NewHydraClient(url string) (*HydraClient, error) {
 
 // AcceptLoginRequest sends the login request to the oauth server and expects the redirect link in return
 func (h *HydraClient) AcceptLoginRequest(challenge string, username string, remember bool) (string, error) {
+	log.Info.Printf("user=%s challenge=%s remember=%t", username, challenge, remember)
 	acceptLoginRequest := swagger.AcceptLoginRequest{
 		Subject:     username,
 		Remember:    remember,
@@ -44,10 +45,13 @@ func (h *HydraClient) AcceptLoginRequest(challenge string, username string, reme
 	req, res, err := h.HydraSDK.AcceptLoginRequest(challenge, acceptLoginRequest)
 
 	if err != nil {
+		log.Error.Printf("msg=%s", err)
 		return "", err
 	} else if res.StatusCode == http.StatusOK {
+		log.Info.Printf("redirect_link=%s", req.RedirectTo)
 		return req.RedirectTo, nil
 	}
+	log.Error.Printf("msg='not able to accept login request' http_status_code=%d", res.StatusCode)
 	return "", fmt.Errorf("hydra returned status code %d", res.StatusCode)
 }
 
@@ -55,13 +59,15 @@ func (h *HydraClient) GetLoginRequest(challenge string) (entities.ValidateLoginR
 	validateLoginRequest := entities.ValidateLoginRequest{}
 	req, res, err := h.HydraSDK.GetLoginRequest(challenge)
 	if err != nil {
-		log.Printf("failed to get login reqest from hydra. reason: %s", err)
+		log.Error.Printf("msg=%s", err)
 		return validateLoginRequest, err
 	}
 	if res.StatusCode == http.StatusOK {
 		validateLoginRequest.Skip = req.Skip
 		validateLoginRequest.Subject = req.Subject
+		log.Info.Printf("http_status_code=%d , validateLoginRequest=%s", http.StatusOK, validateLoginRequest.String())
 		return validateLoginRequest, nil
 	}
+	log.Error.Printf("msg='not able to get login request' http_status_code=%d", res.StatusCode)
 	return validateLoginRequest, fmt.Errorf("status code %d", res.StatusCode)
 }
